@@ -15,10 +15,10 @@ args = parser.parse_args()
 def detected(img):
      saida = ''
      gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-     bfilter = cv2.bilateralFilter(gray, 11, 17, 17) #Noise reduction
-     edged = cv2.Canny(bfilter, 30, 200) #Edge detection
-     keypoints = cv2.findContours(edged.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-     contours = imutils.grab_contours(keypoints)
+     bfilter = cv2.bilateralFilter(gray, 11, 17, 17) # redução de ruido
+     edged = cv2.Canny(bfilter, 30, 200) #detecta as bordas
+     keypoints = cv2.findContours(edged.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) #detecta as contornos
+     contours = imutils.grab_contours(keypoints) #fixa os contornos
      contours = sorted(contours, key=cv2.contourArea, reverse=True)[:10]
      location = None
      for contour in contours:
@@ -29,15 +29,16 @@ def detected(img):
      if location is not None:          
           mask = np.zeros(gray.shape, np.uint8)
 
-          cv2.drawContours(mask, [location], 0,255, -1)
+          cv2.drawContours(mask, [location], 0,255, -1) #desenha contornos
           cv2.bitwise_and(img, img, mask=mask)
           executar = True
+          #corta a imagem
           try:
                (x,y) = np.where(mask==255)
                (x1, y1) = (np.min(x), np.min(y))
                (x2, y2) = (np.max(x), np.max(y))
                cropped_image = gray[x1:x2+1, y1:y2+1]
-          except ValueError:  #raised if `y` is empty.
+          except ValueError:
                executar = False 
                pass
       
@@ -55,8 +56,11 @@ def detected(img):
 
 plate = ''
 if args.i:
-    img = cv2.imread(args.i)
-    plate = detected(img)
+     try:
+          img = cv2.imread(args.i)
+          plate = detected(img)
+     except:
+          print('Não foi possivel abrir a imagem')
 elif args.v:
      frame_rate = 10
      prev = 0
@@ -70,7 +74,7 @@ elif args.v:
           time_elapsed = time.time() - prev
           if time_elapsed > 2./frame_rate:
                prev = time.time()
-               startTime = time.time() # reset time
+               startTime = time.time() 
                img = frame
                plate = detected(img)
                if len(plate) == 7:
